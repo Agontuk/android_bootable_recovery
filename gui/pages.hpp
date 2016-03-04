@@ -6,7 +6,9 @@
 #include "../minzip/Zip.h"
 #include <vector>
 #include <map>
+#include <string>
 #include "rapidxml.hpp"
+#include "gui.hpp"
 using namespace rapidxml;
 
 enum TOUCH_STATE {
@@ -27,12 +29,23 @@ struct COLOR {
 		: red(r), green(g), blue(b), alpha(a) {}
 };
 
+struct language_struct {
+	std::string filename;
+	std::string displayvalue;
+};
+
+inline bool operator < (const language_struct& language1, const language_struct& language2)
+{
+	return language1.displayvalue < language2.displayvalue;
+}
+
+extern std::vector<language_struct> Language_List;
+
 // Utility Functions
 int ConvertStrToColor(std::string str, COLOR* color);
 int gui_forceRender(void);
 int gui_changePage(std::string newPage);
 int gui_changeOverlay(std::string newPage);
-std::string gui_parse_text(string inText);
 
 class Resource;
 class ResourceManager;
@@ -56,7 +69,7 @@ public:
 	virtual int Update(void);
 	virtual int NotifyTouch(TOUCH_STATE state, int x, int y);
 	virtual int NotifyKey(int key, bool down);
-	virtual int NotifyKeyboard(int key);
+	virtual int NotifyCharInput(int ch);
 	virtual int SetKeyBoardFocus(int inFocus);
 	virtual int NotifyVarChange(std::string varName, std::string value);
 	virtual void SetPageFocus(int inFocus);
@@ -82,7 +95,8 @@ public:
 	virtual ~PageSet();
 
 public:
-	int Load(ZipArchive* package, char* xmlFile);
+	int LoadLanguage(char* languageFile, ZipArchive* package);
+	int Load(ZipArchive* package, char* xmlFile, char* languageFile, char* baseLanguageFile);
 	int CheckInclude(ZipArchive* package, xml_document<> *parentDoc);
 
 	Page* FindPage(std::string name);
@@ -92,17 +106,19 @@ public:
 
 	// Helper routine for identifing if we're the current page
 	int IsCurrentPage(Page* page);
+	std::string GetCurrentPage() const;
 
 	// These are routing routines
 	int Render(void);
 	int Update(void);
 	int NotifyTouch(TOUCH_STATE state, int x, int y);
 	int NotifyKey(int key, bool down);
-	int NotifyKeyboard(int key);
+	int NotifyCharInput(int ch);
 	int SetKeyBoardFocus(int inFocus);
 	int NotifyVarChange(std::string varName, std::string value);
 
 	std::vector<xml_node<>*> styles;
+	void AddStringResource(std::string resource_source, std::string resource_name, std::string value);
 
 protected:
 	int LoadPages(xml_node<>* pages);
@@ -121,21 +137,21 @@ class PageManager
 public:
 	// Used by GUI
 	static char* LoadFileToBuffer(std::string filename, ZipArchive* package);
+	static void LoadLanguageList(ZipArchive* package);
+	static void LoadLanguage(std::string filename);
 	static int LoadPackage(std::string name, std::string package, std::string startpage);
 	static PageSet* SelectPackage(std::string name);
 	static int ReloadPackage(std::string name, std::string package);
 	static void ReleasePackage(std::string name);
 	static int RunReload();
 	static void RequestReload();
+	static void SetStartPage(const std::string& page_name);
 
 	// Used for actions and pages
 	static int ChangePage(std::string name);
 	static int ChangeOverlay(std::string name);
 	static const ResourceManager* GetResources();
-
-	// Used for console-only mode
-	static int SwitchToConsole(void);
-	static int EndConsole(void);
+	static std::string GetCurrentPage();
 
 	// Helper to identify if a particular page is the active page
 	static int IsCurrentPage(Page* page);
@@ -145,7 +161,7 @@ public:
 	static int Update(void);
 	static int NotifyTouch(TOUCH_STATE state, int x, int y);
 	static int NotifyKey(int key, bool down);
-	static int NotifyKeyboard(int key);
+	static int NotifyCharInput(int ch);
 	static int SetKeyBoardFocus(int inFocus);
 	static int NotifyVarChange(std::string varName, std::string value);
 
@@ -155,14 +171,18 @@ public:
 	static HardwareKeyboard *GetHardwareKeyboard();
 
 	static xml_node<>* FindStyle(std::string name);
+	static void AddStringResource(std::string resource_source, std::string resource_name, std::string value);
 
 protected:
 	static PageSet* FindPackage(std::string name);
+	static void LoadLanguageListDir(std::string dir);
+	static void Translate_Partition(const char* path, const char* resource_name, const char* default_value);
+	static void Translate_Partition(const char* path, const char* resource_name, const char* default_value, const char* storage_resource_name, const char* storage_default_value);
+	static void Translate_Partition_Display_Names();
 
 protected:
 	static std::map<std::string, PageSet*> mPageSets;
 	static PageSet* mCurrentSet;
-	static PageSet* mBaseSet;
 	static MouseCursor *mMouseCursor;
 	static HardwareKeyboard *mHardwareKeyboard;
 	static bool mReloadTheme;

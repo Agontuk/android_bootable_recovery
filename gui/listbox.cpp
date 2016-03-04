@@ -20,12 +20,15 @@
 
 extern "C" {
 #include "../twcommon.h"
-#include "../minuitwrp/minui.h"
 }
+#include "../minuitwrp/minui.h"
 
 #include "rapidxml.hpp"
 #include "objects.hpp"
 #include "../data.hpp"
+#include "pages.hpp"
+
+extern std::vector<language_struct> Language_List;
 
 GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
 {
@@ -33,7 +36,7 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
 	xml_node<>* child;
 	mIconSelected = mIconUnselected = NULL;
 	mUpdate = 0;
-	isCheckList = false;
+	isCheckList = isTextParsed = false;
 
 	// Get the icons, if any
 	child = FindNode(node, "icon");
@@ -56,6 +59,21 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
 			DataManager::SetValue(mVariable, attr->value());
 		// Get the currently selected value for the list
 		DataManager::GetValue(mVariable, currentValue);
+		if (mVariable == "tw_language") {
+			std::vector<language_struct>::iterator iter;
+			for (iter = Language_List.begin(); iter != Language_List.end(); iter++) {
+				ListItem data;
+				data.displayName = (*iter).displayvalue;
+				data.variableValue = (*iter).filename;
+				data.action = NULL;
+				if (currentValue == (*iter).filename) {
+					data.selected = 1;
+					DataManager::SetValue("tw_language_display", (*iter).displayvalue);
+				} else
+					data.selected = 0;
+				mListItems.push_back(data);
+			}
+		}
 	}
 	else
 		allowSelection = false;		// allows using listbox as a read-only list or menu
@@ -69,7 +87,8 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
 		attr = child->first_attribute("name");
 		if (!attr)
 			continue;
-		item.displayName = gui_parse_text(attr->value());
+		// We will parse display names when we get page focus to ensure that translating takes place
+		item.displayName = attr->value();
 		item.variableValue = gui_parse_text(child->value());
 		item.selected = (child->value() == currentValue);
 		item.action = NULL;
@@ -173,6 +192,13 @@ void GUIListBox::SetPageFocus(int inFocus)
 {
 	GUIScrollList::SetPageFocus(inFocus);
 	if (inFocus) {
+		if (!isTextParsed) {
+			isTextParsed = true;
+			for (size_t i = 0; i < mListItems.size(); i++) {
+				ListItem& item = mListItems[i];
+				item.displayName = gui_parse_text(item.displayName);
+			}
+		}
 		DataManager::GetValue(mVariable, currentValue);
 		NotifyVarChange(mVariable, currentValue);
 	}

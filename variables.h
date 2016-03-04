@@ -17,7 +17,7 @@
 #ifndef _VARIABLES_HEADER_
 #define _VARIABLES_HEADER_
 
-#define TW_VERSION_STR              "2.8.7.0"
+#define TW_VERSION_STR              "3.0.0-0"
 
 #define TW_USE_COMPRESSION_VAR      "tw_use_compression"
 #define TW_FILENAME                 "tw_filename"
@@ -111,7 +111,6 @@
 #define TW_REBOOT_POWEROFF          "tw_reboot_poweroff"
 #define TW_REBOOT_BOOTLOADER        "tw_reboot_bootloader"
 
-#define TW_HAS_DUAL_STORAGE         "tw_has_dual_storage"
 #define TW_USE_EXTERNAL_STORAGE     "tw_use_external_storage"
 #define TW_HAS_INTERNAL             "tw_has_internal"
 #define TW_INTERNAL_PATH            "tw_internal_path"         // /data/media or /internal
@@ -171,10 +170,6 @@
 
 #ifndef CUSTOM_LUN_FILE
 #define CUSTOM_LUN_FILE "/sys/class/android_usb/android0/f_mass_storage/lun%d/file"
-#endif
-
-#ifndef TW_BRIGHTNESS_PATH
-#define TW_BRIGHTNESS_PATH /nobrightness
 #endif
 
 // For OpenRecoveryScript
